@@ -10,6 +10,10 @@ double samplingFrequency;
 
 double vReal[samples];
 double vImag[samples];
+double peak2peak=0;
+double peakValue=0;
+double troughValue=0;
+double glucoseConcentration=0;
 
 #define SCL_INDEX 0x00
 #define SCL_TIME 0x01
@@ -64,40 +68,21 @@ void loop() {
      Serial.println("resetting");
      resetFunc();
     }
-    Serial.print("samplingFrequency:");
-    Serial.println(samplingFrequency);
-    Serial.println("computing..........");
-    delay(250);
-  
-    FFT.Windowing(vReal, samples, FFT_WIN_TYP_HAMMING, FFT_FORWARD);
-    FFT.Compute(vReal, vImag, samples, FFT_FORWARD); //Compute FFT
-    FFT.ComplexToMagnitude(vReal, vImag, samples); // Compute magnitudes
-    x = FFT.MajorPeak(vReal, samples, samplingFrequency);
-    Serial.print("frequency:");
-    Serial.println(x, 6);
-    delay(750);    /* Repeat after delay */
-    if((x>3.5)or(x<=0))j--;
-    else{
-      bpmFrequency+=x;
-      Serial.println(j);
-      lcd.setCursor(j+5 ,1);
-      lcd.print("*");
-      j++;
-    }
-    if(j<=0)j=1;
   }
+  peakValue=vReal[0];
+  troughValue=vReal[0];
+  for(int i=0;i<(sizeof(vReal)/sizeof(vReal[0]));i++){
+    peakValue=max(vReal[i],peakValue);
+    troughValue=min(vReal[i],troughValue);
+  }
+  peak2peak=peakValue-troughValue;
+  glucoseConcentration=(1513.8*peak2peak)-5531.3;
   lcd.clear();
-  bpmFrequency/=4;
-  Serial.print("BPM FREQUENCY:");
-  Serial.println(bpmFrequency);
-  bpm=bpmFrequency*60;
-  Serial.print("BPM:");
-  Serial.println(bpm);
   lcd.setCursor(0,0);
-  lcd.print("...BPM-COUNTER..");
+  lcd.print("...GLK VALUE..");
   lcd.setCursor(0,1);
-  lcd.print(String(bpm,2));
-  lcd.print("bpm");
+  lcd.print(String(glucoseConcentration,2));
+  lcd.print("mg/dL");
   x=0;
   bpmFrequency=0;
   bpm=0;
