@@ -11,8 +11,8 @@ double samplingFrequency;
 double vReal[samples];
 double vImag[samples];
 double peak2peak=0;
-double peakValue=0;
-double troughValue=0;
+double peakValue[5]={0,0,0,0,0};
+double troughValue[5]={0,0,0,0,0};
 double glucoseConcentration=0;
 
 #define SCL_INDEX 0x00
@@ -29,7 +29,7 @@ void setup() {
   // put your setup code here, to run once:
   lcd.begin(16,2);
   lcd.setCursor(0,0);
-  lcd.print("...BPM-COUNTER..");
+  lcd.print("...GLK-INDEXER..");
   delay(3000);
   Serial.begin(115200);
   while(!Serial);
@@ -43,7 +43,7 @@ void loop() {
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("....COMPUTING...");
-  int j=1;
+  int j=0;
   while(j<=4){
     Serial.println("fetching data");
     int s1=millis();
@@ -68,15 +68,25 @@ void loop() {
      Serial.println("resetting");
      resetFunc();
     }
+    lcd.setCursor(j,1);
+    lcd.print('*');
+    peakValue[j]=vReal[0];
+    troughValue[j]=vReal[0];
+    for(int i=0;i<(sizeof(vReal)/sizeof(vReal[0]));i++){
+      peakValue[j]=max(vReal[i],peakValue[j]);
+      troughValue[j]=min(vReal[i],troughValue[j]);
+    }
+    j++;
   }
-  peakValue=vReal[0];
-  troughValue=vReal[0];
-  for(int i=0;i<(sizeof(vReal)/sizeof(vReal[0]));i++){
-    peakValue=max(vReal[i],peakValue);
-    troughValue=min(vReal[i],troughValue);
-  }
-  peak2peak=peakValue-troughValue;
+//  peakValue=vReal[0];
+//  troughValue=vReal[0];
+//  for(int i=0;i<(sizeof(vReal)/sizeof(vReal[0]));i++){
+//    peakValue=max(vReal[i],peakValue);
+//    troughValue=min(vReal[i],troughValue);
+//  }
+  peak2peak=((peakValue[0]+peakValue[1]+peakValue[2]+peakValue[3]+peakValue[4])-(troughValue[0]+troughValue[1]+troughValue[2]+troughValue[3]+troughValue[4]))/5;
   glucoseConcentration=(1513.8*peak2peak)-5531.3;
+  glucoseConcentration/=100;
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("...GLK VALUE..");
